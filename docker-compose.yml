@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+
+  rdb:
+    build:
+      context: ./docker/postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: ns
+      POSTGRES_PASSWORD: passwd
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d/
+      - ./docker/postgres/conf:/etc/postgresql/
+
