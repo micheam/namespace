@@ -4,18 +4,44 @@ import (
 	"github.com/google/uuid"
 )
 
-type ID uuid.UUID
-type Name string
-type Description string
+type NodeID string
+
+func NewNodeID() *NodeID {
+	id := uuid.New().String()
+	nodeID := NodeID(id)
+	return &nodeID
+}
+
+func (n *NodeID) String() string {
+	if n == nil {
+		return ""
+	}
+	return string(*n)
+}
+
+type NodeName string
+type NodeDescription string
 
 type Node struct {
-	id          ID
-	name        Name
-	description Description
-	children    []*Node
+	ID          NodeID
+	Name        NodeName
+	Description *NodeDescription
+}
+
+func NewNode(name string) *Node {
+	id := NewNodeID()
+	return &Node{
+		ID:   *id,
+		Name: NodeName(name),
+	}
+}
+
+func (n *Node) WithDesc(d string) *Node {
+	desc := NodeDescription(d)
+	n.Description = &desc
+	return n
 }
 
 type NodeReader interface {
-	GetByID(root *Node, id ID) *Node
-	FindByName(root *Node, name Name) []*Node
+	GetByID(owner User, id NodeID) (*Node, error)
 }
