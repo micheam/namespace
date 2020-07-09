@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -45,7 +46,7 @@ func TestPostgresNodeReader_GetByID(t *testing.T) {
 	MustInsertNode(db, &RowNode{Id: id, Name: "test"})
 	t.Cleanup(func() { CleanupAll(db) })
 
-	sut, err := NewPostgresNodeReader()
+	sut, err := NewNodeRepository()
 	assert.NoError(err)
 
 	got, gotErr := sut.GetByID(owner, ns.NodeID(id))
@@ -64,10 +65,13 @@ func TestPostgresNodeReader_GetByID_NoExist(t *testing.T) {
 	assert.NoError(err)
 	t.Cleanup(func() { CleanupAll(db) })
 
-	sut, err := NewPostgresNodeReader()
+	sut, err := NewNodeRepository()
 	assert.NoError(err)
 
 	_, gotErr := sut.GetByID(owner, ns.NodeID(id))
 	t.Logf("%T", gotErr)
-	assert.Error(gotErr)
+	if assert.Error(gotErr) {
+		assert.True(errors.Is(gotErr, ns.ErrNotFound),
+			"got error must be ns.ErrNotFound")
+	}
 }

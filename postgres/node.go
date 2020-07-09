@@ -32,26 +32,36 @@ func (r *RowNode) AsNode() (*ns.Node, error) {
 	return node, nil
 }
 
-// nodeReader は、 TODO
-type nodeReader struct {
+// nodeRepository は、 TODO
+type nodeRepository struct {
 	db *sqlx.DB
 }
 
-func NewPostgresNodeReader() (ns.NodeReader, error) {
+func NewNodeRepository() (ns.NodeReader, error) {
 	db, err := GetConn()
 	if err != nil {
 		return nil, fmt.Errorf("failed to init PostgresNodeReader: %w", err)
 	}
-	return &nodeReader{db: db}, nil
+	return &nodeRepository{db: db}, nil
 }
 
 // GetByID は、Postgresql から node を抽出して返却する。
 //
 // TODO(micheam): interface sqlx.Queryer を使って sqlx.DB と sqlx.Tx を透過的に扱う
-func (p *nodeReader) GetByID(owner ns.User, id ns.NodeID) (*ns.Node, error) {
-	row := &RowNode{}
-	if err := p.db.Get(row, "SELECT * FROM node WHERE id = $1", id); err != nil {
+func (p *nodeRepository) GetByID(owner ns.User, id ns.NodeID) (*ns.Node, error) {
+
+	row := new(RowNode)
+	err := p.db.Get(row, "SELECT * FROM node WHERE id = $1", id)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ns.ErrNotFound
+		}
 		return nil, fmt.Errorf("failed to get node(id %s): %w", id, err)
 	}
 	return row.AsNode()
+}
+
+func (n *nodeRepository) Save(owner ns.User, node ns.Node) error {
+	panic("NOT IMPLEMENTED YET")
 }
