@@ -75,3 +75,16 @@ func TestPostgresNodeReader_GetByID_NoExist(t *testing.T) {
 			"got error must be ns.ErrNotFound")
 	}
 }
+
+func TestNodeRepository_Save(t *testing.T) {
+	assert := assert.New(t)
+	db, err := GetConn()
+	assert.NoError(err)
+	sut := &nodeRepository{db: db}
+	var (
+		owner = &ns.User{}
+		node  = ns.NewNode("foo")
+	)
+	gotErr := sut.Save(owner, node)
+	assert.NoError(gotErr)
+}

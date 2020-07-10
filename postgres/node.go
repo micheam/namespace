@@ -62,6 +62,6 @@ func (p *nodeRepository) GetByID(owner ns.User, id ns.NodeID) (*ns.Node, error) 
 	return row.AsNode()
 }
 
-func (n *nodeRepository) Save(owner ns.User, node ns.Node) error {
+func (n *nodeRepository) Save(owner *ns.User, node *ns.Node) error {
 	panic("NOT IMPLEMENTED YET")
 }
