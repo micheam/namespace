@@ -20,7 +20,16 @@ func (n *NodeID) String() string {
 }
 
 type NodeName string
+
+func (n *NodeName) String() string {
+	return string(*n)
+}
+
 type NodeDescription string
+
+func (n *NodeDescription) String() string {
+	return string(*n)
+}
 
 type Node struct {
 	ID          NodeID

@@ -49,10 +49,10 @@ func NewNodeRepository() (ns.NodeReader, error) {
 //
 // TODO(micheam): interface sqlx.Queryer を使って sqlx.DB と sqlx.Tx を透過的に扱う
 func (p *nodeRepository) GetByID(owner ns.User, id ns.NodeID) (*ns.Node, error) {
-
-	row := new(RowNode)
-	err := p.db.Get(row, "SELECT * FROM node WHERE id = $1", id)
-
+	var (
+		row = new(RowNode)
+		err = p.db.Get(row, "SELECT * FROM node WHERE id = $1", id)
+	)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ns.ErrNotFound
@@ -62,6 +62,25 @@ func (p *nodeRepository) GetByID(owner ns.User, id ns.NodeID) (*ns.Node, error) 
 	return row.AsNode()
 }
 
+// Save は、指定されたノードを保存する。
+//
+// 指定された ノード が重複している場合は、 ns.ErrDuplicatedEntity を返却する。
 func (n *nodeRepository) Save(owner *ns.User, node *ns.Node) error {
-	panic("NOT IMPLEMENTED YET")
+	var desc sql.NullString
+	if node.Description != nil {
+		desc = sql.NullString{
+			String: node.Description.String(),
+			Valid:  true,
+		}
+	}
+	row := RowNode{
+		Id:          node.ID.String(),
+		Name:        node.Name.String(),
+		Description: desc,
+	}
+	if _, err := n.db.NamedExec(
+		"INSERT INTO node (id, name, description) VALUES (:id, :name, :description)", row); err != nil {
+		return err
+	}
+	return nil
 }

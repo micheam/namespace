@@ -37,12 +37,11 @@ func TestRowNode_AsNode_returns_a_node(t *testing.T) {
 
 func TestPostgresNodeReader_GetByID(t *testing.T) {
 	var (
-		assert  = assert.New(t)
-		db, err = GetConn()
-		owner   = ns.User{}
-		id      = uuid.New().String()
+		assert = assert.New(t)
+		db     = MustGetConn()
+		owner  = ns.User{}
+		id     = uuid.New().String()
 	)
-	assert.NoError(err)
 	MustInsertNode(db, &RowNode{Id: id, Name: "test"})
 	t.Cleanup(func() { CleanupAll(db) })
 
@@ -56,19 +55,17 @@ func TestPostgresNodeReader_GetByID(t *testing.T) {
 }
 
 func TestPostgresNodeReader_GetByID_NoExist(t *testing.T) {
-	var (
-		assert  = assert.New(t)
-		db, err = GetConn()
-		owner   = ns.User{}
-		id      = uuid.New().String()
-	)
-	assert.NoError(err)
+	// Setup
+	assert := assert.New(t)
+	db := MustGetConn()
+	owner := ns.User{}
+	id := uuid.New().String()
 	t.Cleanup(func() { CleanupAll(db) })
-
 	sut, err := NewNodeRepository()
 	assert.NoError(err)
-
+	// Exercise
 	_, gotErr := sut.GetByID(owner, ns.NodeID(id))
+	// Verification
 	t.Logf("%T", gotErr)
 	if assert.Error(gotErr) {
 		assert.True(errors.Is(gotErr, ns.ErrNotFound),
@@ -78,13 +75,24 @@ func TestPostgresNodeReader_GetByID_NoExist(t *testing.T) {
 
 func TestNodeRepository_Save(t *testing.T) {
 	assert := assert.New(t)
-	db, err := GetConn()
-	assert.NoError(err)
+	db := MustGetConn()
 	sut := &nodeRepository{db: db}
-	var (
-		owner = &ns.User{}
-		node  = ns.NewNode("foo")
-	)
+	owner := &ns.User{}
+	node := ns.NewNode("foo")
 	gotErr := sut.Save(owner, node)
-	assert.NoError(gotErr)
+	if assert.NoError(gotErr) {
+		got, gotErr := sut.GetByID(*owner, node.ID)
+		assert.NoError(gotErr)
+		assert.EqualValues(node.ID, got.ID, "Nodeが登録されていること")
+	}
+}
+
+func TestNodeRepository_Save_IllegalNode(t *testing.T) {
+	assert := assert.New(t)
+	db := MustGetConn()
+	sut := &nodeRepository{db: db}
+	owner := &ns.User{}
+	node := &ns.Node{ /* ID の指定なし */ Name: ns.NodeName("aaa")}
+	gotErr := sut.Save(owner, node)
+	assert.Error(gotErr)
 }
