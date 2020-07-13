@@ -25,7 +25,7 @@ func TestRowNode_AsNode_returns_a_node(t *testing.T) {
 		Description: sql.NullString{Valid: true, String: desc},
 	}
 	// exercise
-	got, gotErr := sut.AsNode()
+	got, gotErr := sut.AsEntity()
 	// verification
 	assert.NoError(gotErr, "エラーとならないこと")
 	assert.NotNil(got, "nilでないNodeをかえすこと")

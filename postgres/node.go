@@ -10,7 +10,7 @@ import (
 	"micheam.com/ns"
 )
 
-// RowNode は、TODO
+// RowNode is a row of node table
 type RowNode struct {
 	Id          string         `db:"id"`
 	Name        string         `db:"name"`
@@ -19,8 +19,8 @@ type RowNode struct {
 	UpdatedAt   time.Time      `db:"updated_at"`
 }
 
-// AsNode は、 TODO
-func (r *RowNode) AsNode() (*ns.Node, error) {
+// AsEntity convert table model into entity
+func (r *RowNode) AsEntity() (*ns.Node, error) {
 	node := &ns.Node{
 		ID:   ns.NodeID(r.Id),
 		Name: ns.NodeName(r.Name),
@@ -32,11 +32,11 @@ func (r *RowNode) AsNode() (*ns.Node, error) {
 	return node, nil
 }
 
-// nodeRepository は、 TODO
 type nodeRepository struct {
 	db *sqlx.DB
 }
 
+// NewNodeRepository は、ns.NodeReader を初期化して返却する
 func NewNodeRepository() (ns.NodeReader, error) {
 	db, err := GetConn()
 	if err != nil {
@@ -45,9 +45,7 @@ func NewNodeRepository() (ns.NodeReader, error) {
 	return &nodeRepository{db: db}, nil
 }
 
-// GetByID は、Postgresql から node を抽出して返却する。
-//
-// TODO(micheam): interface sqlx.Queryer を使って sqlx.DB と sqlx.Tx を透過的に扱う
+// GetByID は、Postgresql から node を抽出して返却する
 func (p *nodeRepository) GetByID(owner ns.User, id ns.NodeID) (*ns.Node, error) {
 	var (
 		row = new(RowNode)
@@ -59,12 +57,12 @@ func (p *nodeRepository) GetByID(owner ns.User, id ns.NodeID) (*ns.Node, error) 
 		}
 		return nil, fmt.Errorf("failed to get node(id %s): %w", id, err)
 	}
-	return row.AsNode()
+	return row.AsEntity()
 }
 
-// Save は、指定されたノードを保存する。
+// Save は、指定されたノードを保存する
 //
-// 指定された ノード が重複している場合は、 ns.ErrDuplicatedEntity を返却する。
+// 指定された node が重複している場合は、 ns.ErrDuplicatedEntity を返却する。
 func (n *nodeRepository) Save(owner *ns.User, node *ns.Node) error {
 	var desc sql.NullString
 	if node.Description != nil {
