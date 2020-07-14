@@ -1,17 +1,22 @@
 package ns
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 )
 
+// NodeID is an identity of node
 type NodeID string
 
+// NewNodeID return generated NodeID
 func NewNodeID() *NodeID {
 	id := uuid.New().String()
 	nodeID := NodeID(id)
 	return &nodeID
 }
 
+// String returns string
 func (n *NodeID) String() string {
 	if n == nil {
 		return ""
@@ -35,13 +40,18 @@ type Node struct {
 	ID          NodeID
 	Name        NodeName
 	Description *NodeDescription
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 func NewNode(name string) *Node {
 	id := NewNodeID()
+	now := time.Now()
 	return &Node{
-		ID:   *id,
-		Name: NodeName(name),
+		ID:        *id,
+		Name:      NodeName(name),
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 }
 

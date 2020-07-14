@@ -2,6 +2,7 @@ package ns
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -38,4 +39,6 @@ func TestNode_WithDesc(t *testing.T) {
 	assert.EqualValues(t, "foo", sut.Name)
 	assert.NotNil(t, sut.Description)
 	assert.EqualValues(t, "bar", *sut.Description)
+	assert.NotEqualValues(t, new(time.Time), sut.CreatedAt)
+	assert.NotEqualValues(t, new(time.Time), sut.UpdatedAt)
 }
