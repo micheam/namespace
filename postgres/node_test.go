@@ -30,7 +30,9 @@ func TestRowNode_AsNode_returns_a_node(t *testing.T) {
 	assert.NoError(gotErr, "エラーとならないこと")
 	assert.NotNil(got, "nilでないNodeをかえすこと")
 	assert.EqualValues(id.String(), got.ID, "Idが付与されていること")
-	assert.EqualValues(name, got.Name, "Nameが付与されていること")
+	if assert.True(got.Name.Valid()) {
+		assert.EqualValues(name, got.Name.String(), "Nameが付与されていること")
+	}
 	assert.NotNil(got.Description, "DescriptionがNilでないこと")
 	assert.EqualValues(desc, *got.Description, "Descriptionがふよされていること")
 }
@@ -92,7 +94,7 @@ func TestNodeRepository_Save_IllegalNode(t *testing.T) {
 	db := MustGetConn()
 	sut := &nodeRepository{db: db}
 	owner := &ns.User{}
-	node := &ns.Node{ /* ID の指定なし */ Name: ns.NodeName("aaa")}
+	node := &ns.Node{ /* ID の指定なし */ Name: *ns.NewNodeName("aaa")}
 	gotErr := sut.Save(owner, node)
 	assert.Error(gotErr)
 }

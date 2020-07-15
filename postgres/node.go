@@ -23,7 +23,7 @@ type RowNode struct {
 func (r *RowNode) AsEntity() (*ns.Node, error) {
 	node := &ns.Node{
 		ID:   ns.NodeID(r.Id),
-		Name: ns.NodeName(r.Name),
+		Name: *ns.NewNodeName(r.Name),
 	}
 	if r.Description.Valid {
 		desc := ns.NodeDescription(r.Description.String)

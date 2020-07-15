@@ -1,10 +1,14 @@
 package ns
 
 import (
+	"regexp"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+// =============================================
+// NodeID {{{1
 
 // NodeID is an identity of node
 type NodeID string
@@ -24,17 +28,51 @@ func (n *NodeID) String() string {
 	return string(*n)
 }
 
-type NodeName string
+// =============================================
+// NodeName {{{1
 
-func (n *NodeName) String() string {
-	return string(*n)
+// NodeName is a Name of Node
+type NodeName struct {
+	str   string
+	valid bool
 }
+
+// NewNodeName returns a NodeName generated from s
+func NewNodeName(s string) *NodeName {
+
+	valid := func(s string) bool {
+		// とりあえず、スラッシュだけ検査
+		hasSlash, _ := regexp.Match(`/`, []byte(s))
+		return !hasSlash
+	}(s)
+
+	return &NodeName{
+		str:   s,
+		valid: valid,
+	}
+}
+
+// Valid returns Validation result
+func (n *NodeName) Valid() bool {
+	return n.valid
+}
+
+// String returns a string representation of Node.
+func (n *NodeName) String() string {
+	return n.str
+}
+
+// =============================================
+// NodeDescription {{{1
 
 type NodeDescription string
 
 func (n *NodeDescription) String() string {
 	return string(*n)
 }
+
+// =============================================
+// Node {{{1
 
 type Node struct {
 	ID          NodeID
@@ -49,7 +87,7 @@ func NewNode(name string) *Node {
 	now := time.Now()
 	return &Node{
 		ID:        *id,
-		Name:      NodeName(name),
+		Name:      *NewNodeName(name),
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
