@@ -46,7 +46,7 @@ func NewNodeRepository() (ns.NodeReader, error) {
 }
 
 // GetByID は、Postgresql から node を抽出して返却する
-func (p *nodeRepository) GetByID(owner ns.User, id ns.NodeID) (*ns.Node, error) {
+func (p *nodeRepository) GetByID(owner *ns.User, id ns.NodeID) (*ns.Node, error) {
 	var (
 		row = new(RowNode)
 		err = p.db.Get(row, "SELECT * FROM node WHERE id = $1", id)

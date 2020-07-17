@@ -65,8 +65,10 @@ func (n *NodeName) String() string {
 // =============================================
 // NodeDescription {{{1
 
+// NodeDescription ...
 type NodeDescription string
 
+// String ...
 func (n *NodeDescription) String() string {
 	return string(*n)
 }
@@ -74,6 +76,7 @@ func (n *NodeDescription) String() string {
 // =============================================
 // Node {{{1
 
+// Node ...
 type Node struct {
 	ID          NodeID
 	Name        NodeName
@@ -82,6 +85,7 @@ type Node struct {
 	UpdatedAt   time.Time
 }
 
+// NewNode ...
 func NewNode(name string) *Node {
 	id := NewNodeID()
 	now := time.Now()
@@ -93,12 +97,14 @@ func NewNode(name string) *Node {
 	}
 }
 
+// WithDesc ...
 func (n *Node) WithDesc(d string) *Node {
 	desc := NodeDescription(d)
 	n.Description = &desc
 	return n
 }
 
+// NodeReader ...
 type NodeReader interface {
-	GetByID(owner User, id NodeID) (*Node, error)
+	GetByID(owner *User, id NodeID) (*Node, error)
 }

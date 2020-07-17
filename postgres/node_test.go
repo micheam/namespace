@@ -41,7 +41,7 @@ func TestPostgresNodeReader_GetByID(t *testing.T) {
 	var (
 		assert = assert.New(t)
 		db     = MustGetConn()
-		owner  = ns.User{}
+		owner  = new(ns.User)
 		id     = uuid.New().String()
 	)
 	MustInsertNode(db, &RowNode{Id: id, Name: "test"})
@@ -60,7 +60,7 @@ func TestPostgresNodeReader_GetByID_NoExist(t *testing.T) {
 	// Setup
 	assert := assert.New(t)
 	db := MustGetConn()
-	owner := ns.User{}
+	owner := new(ns.User)
 	id := uuid.New().String()
 	t.Cleanup(func() { CleanupAll(db) })
 	sut, err := NewNodeRepository()
@@ -83,7 +83,7 @@ func TestNodeRepository_Save(t *testing.T) {
 	node := ns.NewNode("foo")
 	gotErr := sut.Save(owner, node)
 	if assert.NoError(gotErr) {
-		got, gotErr := sut.GetByID(*owner, node.ID)
+		got, gotErr := sut.GetByID(owner, node.ID)
 		assert.NoError(gotErr)
 		assert.EqualValues(node.ID, got.ID, "Nodeが登録されていること")
 	}
