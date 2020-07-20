@@ -13,7 +13,7 @@ import (
 
 // RowNode is a row of node table
 type RowNode struct {
-	Id          string         `db:"id"`
+	ID          string         `db:"id"`
 	Name        string         `db:"name"`
 	Description sql.NullString `db:"description"`
 	CreatedAt   sql.NullTime   `db:"created_at"`
@@ -23,7 +23,7 @@ type RowNode struct {
 // AsEntity convert table model into entity
 func (r *RowNode) AsEntity() (*ns.Node, error) {
 	node := &ns.Node{
-		ID:   ns.NodeID(r.Id),
+		ID:   ns.NodeID(r.ID),
 		Name: *ns.NewNodeName(r.Name),
 	}
 	if r.Description.Valid {
@@ -33,20 +33,21 @@ func (r *RowNode) AsEntity() (*ns.Node, error) {
 	return node, nil
 }
 
-type nodeRepository struct {
+// The NodeRepository provides access to node information.
+type NodeRepository struct {
 	db *sqlx.DB
 }
 
 // NewNodeRepository は、nodeReader を初期化して返却する
-func NewNodeRepository(db *sqlx.DB) *nodeRepository {
-	return &nodeRepository{db: db}
+func NewNodeRepository(db *sqlx.DB) *NodeRepository {
+	return &NodeRepository{db: db}
 }
 
 // GetByID は、Postgresql から node を抽出して返却する
-func (p *nodeRepository) GetByID(owner *ns.User, id ns.NodeID) (*ns.Node, error) {
+func (n *NodeRepository) GetByID(owner *ns.User, id ns.NodeID) (*ns.Node, error) {
 	var (
 		row = new(RowNode)
-		err = p.db.Get(row, "SELECT * FROM node WHERE id = $1", id)
+		err = n.db.Get(row, "SELECT * FROM node WHERE id = $1", id)
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -60,7 +61,7 @@ func (p *nodeRepository) GetByID(owner *ns.User, id ns.NodeID) (*ns.Node, error)
 // Save は、指定されたノードを Postgresql に登録する
 //
 // すでに登録されている（一制約違反する）場合は、 ns.ErrDuplicatedEntity を返却する。
-func (n *nodeRepository) Save(owner *ns.User, node *ns.Node) error {
+func (n *NodeRepository) Save(owner *ns.User, node *ns.Node) error {
 
 	var desc sql.NullString
 	if node.Description != nil {
@@ -71,7 +72,7 @@ func (n *nodeRepository) Save(owner *ns.User, node *ns.Node) error {
 	}
 	now := time.Now()
 	row := RowNode{
-		Id:          node.ID.String(),
+		ID:          node.ID.String(),
 		Name:        node.Name.String(),
 		Description: desc,
 		CreatedAt:   sql.NullTime{Valid: true, Time: now},
