@@ -108,3 +108,8 @@ func (n *Node) WithDesc(d string) *Node {
 type NodeReader interface {
 	GetByID(owner *User, id NodeID) (*Node, error)
 }
+
+// NodeWriter ...
+type NodeWriter interface {
+	Save(owner *User, node *Node) error
+}

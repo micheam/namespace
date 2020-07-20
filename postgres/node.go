@@ -2,11 +2,12 @@ package postgres
 
 import (
 	"fmt"
-
-	"database/sql"
 	"time"
 
+	"database/sql"
+
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"micheam.com/ns"
 )
 
@@ -15,8 +16,8 @@ type RowNode struct {
 	Id          string         `db:"id"`
 	Name        string         `db:"name"`
 	Description sql.NullString `db:"description"`
-	CreatedAt   time.Time      `db:"created_at"`
-	UpdatedAt   time.Time      `db:"updated_at"`
+	CreatedAt   sql.NullTime   `db:"created_at"`
+	UpdatedAt   sql.NullTime   `db:"updated_at"`
 }
 
 // AsEntity convert table model into entity
@@ -36,13 +37,9 @@ type nodeRepository struct {
 	db *sqlx.DB
 }
 
-// NewNodeRepository は、ns.NodeReader を初期化して返却する
-func NewNodeRepository() (ns.NodeReader, error) {
-	db, err := GetConn()
-	if err != nil {
-		return nil, fmt.Errorf("failed to init PostgresNodeReader: %w", err)
-	}
-	return &nodeRepository{db: db}, nil
+// NewNodeRepository は、nodeReader を初期化して返却する
+func NewNodeRepository(db *sqlx.DB) *nodeRepository {
+	return &nodeRepository{db: db}
 }
 
 // GetByID は、Postgresql から node を抽出して返却する
@@ -60,10 +57,11 @@ func (p *nodeRepository) GetByID(owner *ns.User, id ns.NodeID) (*ns.Node, error)
 	return row.AsEntity()
 }
 
-// Save は、指定されたノードを保存する
+// Save は、指定されたノードを Postgresql に登録する
 //
-// 指定された node が重複している場合は、 ns.ErrDuplicatedEntity を返却する。
+// すでに登録されている（一制約違反する）場合は、 ns.ErrDuplicatedEntity を返却する。
 func (n *nodeRepository) Save(owner *ns.User, node *ns.Node) error {
+
 	var desc sql.NullString
 	if node.Description != nil {
 		desc = sql.NullString{
@@ -71,14 +69,29 @@ func (n *nodeRepository) Save(owner *ns.User, node *ns.Node) error {
 			Valid:  true,
 		}
 	}
+	now := time.Now()
 	row := RowNode{
 		Id:          node.ID.String(),
 		Name:        node.Name.String(),
 		Description: desc,
+		CreatedAt:   sql.NullTime{Valid: true, Time: now},
+		UpdatedAt:   sql.NullTime{Valid: true, Time: now},
 	}
 	if _, err := n.db.NamedExec(
 		"INSERT INTO node (id, name, description) VALUES (:id, :name, :description)", row); err != nil {
+
+		if pqerr, ok := err.(*pq.Error); ok {
+			if IsUniqueViolation(pqerr) {
+				return ns.ErrDuplicatedEntity
+			}
+		}
+
 		return err
 	}
+
+	// 結果をエンティティに反映
+	node.CreatedAt = row.CreatedAt.Time
+	node.UpdatedAt = row.UpdatedAt.Time
+
 	return nil
 }

@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"micheam.com/ns"
 )
@@ -46,9 +45,7 @@ func TestPostgresNodeReader_GetByID(t *testing.T) {
 	)
 	MustInsertNode(db, &RowNode{Id: id, Name: "test"})
 	t.Cleanup(func() { CleanupAll(db) })
-
-	sut, err := NewNodeRepository()
-	assert.NoError(err)
+	sut := NewNodeRepository(db)
 
 	got, gotErr := sut.GetByID(owner, ns.NodeID(id))
 	assert.NoError(gotErr)
@@ -63,8 +60,7 @@ func TestPostgresNodeReader_GetByID_NoExist(t *testing.T) {
 	owner := new(ns.User)
 	id := uuid.New().String()
 	t.Cleanup(func() { CleanupAll(db) })
-	sut, err := NewNodeRepository()
-	assert.NoError(err)
+	sut := NewNodeRepository(db)
 	// Exercise
 	_, gotErr := sut.GetByID(owner, ns.NodeID(id))
 	// Verification
@@ -76,16 +72,45 @@ func TestPostgresNodeReader_GetByID_NoExist(t *testing.T) {
 }
 
 func TestNodeRepository_Save(t *testing.T) {
+	// Setup
 	assert := assert.New(t)
 	db := MustGetConn()
 	sut := &nodeRepository{db: db}
 	owner := &ns.User{}
-	node := ns.NewNode("foo")
+	node := &ns.Node{
+		ID:   *ns.NewNodeID(),
+		Name: *ns.NewNodeName(uuid.New().String())}
+	// Exercise
 	gotErr := sut.Save(owner, node)
+	// Verify
 	if assert.NoError(gotErr) {
+		assert.False(node.CreatedAt.IsZero(), "CreatedAt が登録時にセットされるべき")
+		assert.False(node.UpdatedAt.IsZero(), "UpdatedAt が登録時にセットされるべき")
+		assert.EqualValues(node.CreatedAt, node.UpdatedAt, "初期登録時は、CreatedAt と UpdatedAt が一致する")
+
 		got, gotErr := sut.GetByID(owner, node.ID)
-		assert.NoError(gotErr)
-		assert.EqualValues(node.ID, got.ID, "Nodeが登録されていること")
+		assert.NoError(gotErr, "登録に")
+		assert.EqualValues(node.ID, got.ID, "エンティティに指定された ID で登録されるべき")
+	}
+}
+
+func TestNodeRepository_Save_Duplicated(t *testing.T) {
+	// Setup
+	assert := assert.New(t)
+	db := MustGetConn()
+	sut := &nodeRepository{db: db}
+	owner := &ns.User{}
+	node := &ns.Node{
+		ID:   *ns.NewNodeID(),
+		Name: *ns.NewNodeName(uuid.New().String())}
+	err := sut.Save(owner, node)
+	assert.NoError(err)
+	// Exercise
+	gotErr := sut.Save(owner, node)
+	// Verify
+	if assert.Error(gotErr) {
+		assert.True(errors.Is(gotErr, ns.ErrDuplicatedEntity),
+			"ns.ErrDuplicatedEntity が返却される")
 	}
 }
 
