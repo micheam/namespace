@@ -1,13 +1,18 @@
 package ns
 
-import (
-	"github.com/google/uuid"
-)
+// UID is a identifier of user.
+type UID string
 
-type UID uuid.UUID
+// String returns the string representation of this user ID.
+func (u *UID) String() string {
+	return string(*u)
+}
+
+// UserName is a name of user.
 type UserName string
 
+// User is a owner of node.
 type User struct {
-	id   UID
-	name UserName
+	ID   UID      `json:"id"`
+	Name UserName `json:"name"`
 }
