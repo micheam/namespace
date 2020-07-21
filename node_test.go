@@ -96,10 +96,34 @@ func TestCreateNewNode_Exec(t *testing.T) {
 		nodeWriter.On("Save", mock.Anything, mock.Anything).Return(nil)
 
 		sut := NewNodeCreation(nodeWriter, presenter)
-		got := sut.Exec(context.TODO(), NodeCreationRequest{})
+		got := sut.Exec(context.TODO(), NodeCreationRequest{
+			Name: "my namespace",
+		})
 		if assert.NoError(got) {
 			nodeWriter.AssertNumberOfCalls(t, "Save", 1)
 		}
+	})
+
+	t.Run("validate request data", func(t *testing.T) {
+		presenter := func(ctx context.Context, resp *NodeCreationResponse) error {
+			t.Error("expected to not be called, but was")
+			return nil
+		}
+		nodeWriter := new(MockNodeWriter)
+		nodeWriter.On("Save", mock.Anything, mock.Anything).Return(nil)
+		sut := NewNodeCreation(nodeWriter, presenter)
+
+		ctx := context.TODO()
+		t.Run("node name with slash", func(t *testing.T) {
+			got := sut.Exec(ctx, NodeCreationRequest{Name: "name/with/slash"})
+			assert.Error(t, got)
+			assert.True(t, errors.Is(got, ErrIllegalArgument))
+		})
+		t.Run("empty node name", func(t *testing.T) {
+			got := sut.Exec(ctx, NodeCreationRequest{Name: ""})
+			assert.Error(t, got)
+			assert.True(t, errors.Is(got, ErrIllegalArgument))
+		})
 	})
 
 	t.Run("faile to save", func(t *testing.T) {
@@ -114,7 +138,10 @@ func TestCreateNewNode_Exec(t *testing.T) {
 		nodeWriter.On("Save", mock.Anything, mock.Anything).Return(orgError)
 
 		sut := NewNodeCreation(nodeWriter, presenter)
-		got := sut.Exec(context.TODO(), NodeCreationRequest{})
+		got := sut.Exec(
+			context.TODO(),
+			NodeCreationRequest{Name: "test"})
+
 		if assert.Error(got) {
 			assert.True(nodeWriter.AssertNumberOfCalls(t, "Save", 1))
 			assert.True(errors.Is(got, orgError))

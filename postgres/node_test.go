@@ -19,7 +19,7 @@ func TestRowNode_AsNode_returns_a_node(t *testing.T) {
 		desc = "this is a desc"
 	)
 	sut := &RowNode{
-		Id:          id.String(),
+		ID:          id.String(),
 		Name:        name,
 		Description: sql.NullString{Valid: true, String: desc},
 	}
@@ -43,7 +43,7 @@ func TestPostgresNodeReader_GetByID(t *testing.T) {
 		owner  = new(ns.User)
 		id     = uuid.New().String()
 	)
-	MustInsertNode(db, &RowNode{Id: id, Name: "test"})
+	MustInsertNode(db, &RowNode{ID: id, Name: "test"})
 	t.Cleanup(func() { CleanupAll(db) })
 	sut := NewNodeRepository(db)
 
@@ -75,7 +75,7 @@ func TestNodeRepository_Save(t *testing.T) {
 	// Setup
 	assert := assert.New(t)
 	db := MustGetConn()
-	sut := &nodeRepository{db: db}
+	sut := &NodeRepository{db: db}
 	owner := &ns.User{}
 	node := &ns.Node{
 		ID:   *ns.NewNodeID(),
@@ -98,7 +98,7 @@ func TestNodeRepository_Save_Duplicated(t *testing.T) {
 	// Setup
 	assert := assert.New(t)
 	db := MustGetConn()
-	sut := &nodeRepository{db: db}
+	sut := &NodeRepository{db: db}
 	owner := &ns.User{}
 	node := &ns.Node{
 		ID:   *ns.NewNodeID(),
@@ -117,7 +117,7 @@ func TestNodeRepository_Save_Duplicated(t *testing.T) {
 func TestNodeRepository_Save_IllegalNode(t *testing.T) {
 	assert := assert.New(t)
 	db := MustGetConn()
-	sut := &nodeRepository{db: db}
+	sut := &NodeRepository{db: db}
 	owner := &ns.User{}
 	node := &ns.Node{ /* ID の指定なし */ Name: *ns.NewNodeName("aaa")}
 	gotErr := sut.Save(owner, node)

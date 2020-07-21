@@ -36,11 +36,13 @@ type NodeName struct {
 // NewNodeName returns a NodeName generated from s
 func NewNodeName(s string) *NodeName {
 
-	valid := func(s string) bool {
-		// とりあえず、スラッシュだけ検査
-		hasSlash, _ := regexp.Match(`/`, []byte(s))
-		return !hasSlash
-	}(s)
+	valid := true
+	if matched, _ := regexp.Match(`/`, []byte(s)); matched {
+		valid = false
+	}
+	if s == "" {
+		valid = false
+	}
 
 	return &NodeName{
 		str:   s,
@@ -138,8 +140,12 @@ type NodeCreationResponseOutput func(ctx context.Context, resp *NodeCreationResp
 // Exec executes the process of creating a new node.
 func (c *NodeCreation) Exec(ctx context.Context, request NodeCreationRequest) error {
 
-	name := NewNodeName(request.Name)
-	node := NewNode(*name)
+	nodeName := NewNodeName(request.Name)
+	if !nodeName.Valid() {
+		return fmt.Errorf("node name: %w", ErrIllegalArgument)
+	}
+
+	node := NewNode(*nodeName)
 	if err := c.nodeWriter.Save(nil, node); err != nil {
 		return fmt.Errorf("failed to save new node: %w", err)
 	}
