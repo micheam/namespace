@@ -1,14 +1,13 @@
 package ns
 
 import (
+	"context"
+	"fmt"
 	"regexp"
 	"time"
 
 	"github.com/google/uuid"
 )
-
-// =============================================
-// NodeID {{{1
 
 // NodeID is an identity of node
 type NodeID string
@@ -27,9 +26,6 @@ func (n *NodeID) String() string {
 	}
 	return string(*n)
 }
-
-// =============================================
-// NodeName {{{1
 
 // NodeName is a Name of Node
 type NodeName struct {
@@ -62,9 +58,6 @@ func (n *NodeName) String() string {
 	return n.str
 }
 
-// =============================================
-// NodeDescription {{{1
-
 // NodeDescription ...
 type NodeDescription string
 
@@ -72,9 +65,6 @@ type NodeDescription string
 func (n *NodeDescription) String() string {
 	return string(*n)
 }
-
-// =============================================
-// Node {{{1
 
 // Node ...
 type Node struct {
@@ -86,12 +76,12 @@ type Node struct {
 }
 
 // NewNode ...
-func NewNode(name string) *Node {
+func NewNode(name NodeName) *Node {
 	id := NewNodeID()
 	now := time.Now()
 	return &Node{
 		ID:        *id,
-		Name:      *NewNodeName(name),
+		Name:      name,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -104,6 +94,8 @@ func (n *Node) WithDesc(d string) *Node {
 	return n
 }
 
+// UseCases ------------------------------------------------
+
 // NodeReader ...
 type NodeReader interface {
 	GetByID(owner *User, id NodeID) (*Node, error)
@@ -112,4 +104,48 @@ type NodeReader interface {
 // NodeWriter ...
 type NodeWriter interface {
 	Save(owner *User, node *Node) error
+}
+
+// UseCases ------------------------------------------------
+
+// NodeCreation is a UseCase.
+type NodeCreation struct {
+	nodeWriter NodeWriter
+	presenter  NodeCreationResponseOutput
+}
+
+// NewNodeCreation return NodeCreation interactor.
+func NewNodeCreation(w NodeWriter, p NodeCreationResponseOutput) *NodeCreation {
+	return &NodeCreation{
+		nodeWriter: w,
+		presenter:  p,
+	}
+}
+
+// NodeCreationRequest is a request data of new node creation.
+type NodeCreationRequest struct {
+	Name string
+}
+
+// NodeCreationResponse is a response data of new node creation.
+type NodeCreationResponse struct {
+	Created *Node
+}
+
+// NodeCreationResponseOutput defines how to output the result on new node creation.
+type NodeCreationResponseOutput func(ctx context.Context, resp *NodeCreationResponse) error
+
+// Exec executes the process of creating a new node.
+func (c *NodeCreation) Exec(ctx context.Context, request NodeCreationRequest) error {
+
+	name := NewNodeName(request.Name)
+	node := NewNode(*name)
+	if err := c.nodeWriter.Save(nil, node); err != nil {
+		return fmt.Errorf("failed to save new node: %w", err)
+	}
+
+	response := new(NodeCreationResponse)
+	response.Created = node
+
+	return c.presenter(ctx, response)
 }

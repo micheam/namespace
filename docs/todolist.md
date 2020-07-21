@@ -1,6 +1,7 @@
 # todolist
 
 ## DOING
++ usecase: NodeCreation
 
 ## TODO
 * test helper `NewRamdomNodeName()`
@@ -9,6 +10,7 @@
 * ns.User のコンストラクタ関数（ファクトリ関数）を作る
 * interface sqlx.Queryer を使って sqlx.DB と sqlx.Tx を透過的に扱う
 * 未保存のエンティティは見分けがつく様にしたい 別のエンティティにするべき？
+* go1.17 にて Generics がきたら、 UseCase は インターフェース を切りたい
 
 ## DONE
 * ノードの追加処理
