@@ -9,6 +9,6 @@ import (
 
 func TestUID_String(t *testing.T) {
 	uuid := uuid.New()
-	sut := UID(uuid.String())
+	sut := UserID(uuid.String())
 	assert.EqualValues(t, uuid.String(), sut.String())
 }
