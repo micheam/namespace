@@ -13,6 +13,7 @@ import (
 
 // RowNode is a row of node table
 type RowNode struct {
+	UserID      string         `db:"user_id"`
 	ID          string         `db:"id"`
 	Name        string         `db:"name"`
 	Description sql.NullString `db:"description"`
@@ -72,6 +73,7 @@ func (n *NodeRepository) Save(owner *ns.User, node *ns.Node) error {
 	}
 	now := time.Now()
 	row := RowNode{
+		UserID:      owner.ID.String(),
 		ID:          node.ID.String(),
 		Name:        node.Name.String(),
 		Description: desc,
@@ -79,7 +81,9 @@ func (n *NodeRepository) Save(owner *ns.User, node *ns.Node) error {
 		UpdatedAt:   sql.NullTime{Valid: true, Time: now},
 	}
 	if _, err := n.db.NamedExec(
-		"INSERT INTO node (id, name, description) VALUES (:id, :name, :description)", row); err != nil {
+		`INSERT INTO node 
+         (id, name, description, user_id) 
+         VALUES (:id, :name, :description, :user_id)`, row); err != nil {
 
 		if pqerr, ok := err.(*pq.Error); ok {
 			if IsUniqueViolation(pqerr) {

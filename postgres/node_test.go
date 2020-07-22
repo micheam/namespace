@@ -43,7 +43,9 @@ func TestPostgresNodeReader_GetByID(t *testing.T) {
 		owner  = new(ns.User)
 		id     = uuid.New().String()
 	)
-	MustInsertNode(db, &RowNode{ID: id, Name: "test"})
+	user := &RowUser{ID: uuid.New().String(), Name: "test user"}
+	MustInsertUser(db, user)
+	MustInsertNode(db, &RowNode{ID: id, Name: "test", UserID: user.ID})
 	t.Cleanup(func() { CleanupAll(db) })
 	sut := NewNodeRepository(db)
 
@@ -75,8 +77,9 @@ func TestNodeRepository_Save(t *testing.T) {
 	// Setup
 	assert := assert.New(t)
 	db := MustGetConn()
+	owner := PrepareTestUser(db)
+
 	sut := &NodeRepository{db: db}
-	owner := &ns.User{}
 	node := &ns.Node{
 		ID:   *ns.NewNodeID(),
 		Name: *ns.NewNodeName(uuid.New().String())}
@@ -98,8 +101,8 @@ func TestNodeRepository_Save_Duplicated(t *testing.T) {
 	// Setup
 	assert := assert.New(t)
 	db := MustGetConn()
+	owner := PrepareTestUser(db)
 	sut := &NodeRepository{db: db}
-	owner := &ns.User{}
 	node := &ns.Node{
 		ID:   *ns.NewNodeID(),
 		Name: *ns.NewNodeName(uuid.New().String())}

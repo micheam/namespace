@@ -21,3 +21,8 @@ type User struct {
 	ID   UserID   `json:"id"`
 	Name UserName `json:"name"`
 }
+
+// UserReader defines how to extract users.
+type UserReader interface {
+	GetByID(id UserID) (*User, error)
+}

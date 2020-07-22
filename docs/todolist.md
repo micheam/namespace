@@ -1,12 +1,12 @@
 # todolist
 
 ## DOING
-+ usecase: NodeCreation
+* 全体的に owner ns.User を使うようにする
+* usecase: NodeCreation
 
 ## TODO
 * test helper `NewRamdomNodeName()`
 * postgres への Insert時に CreatedAt と UpdatedAt は払い出させる？
-* 全体的に owner ns.User を使うようにする
 * ns.User のコンストラクタ関数（ファクトリ関数）を作る
 * interface sqlx.Queryer を使って sqlx.DB と sqlx.Tx を透過的に扱う
 * 未保存のエンティティは見分けがつく様にしたい 別のエンティティにするべき？
