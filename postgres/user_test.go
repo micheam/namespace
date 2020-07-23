@@ -21,11 +21,12 @@ func TestRowUser_AsNode(t *testing.T) {
 	// exercise
 	got, gotErr := sut.AsEntity()
 	// verification
-	assert.NoError(gotErr, "エラーとならないこと")
-	assert.NotNil(got, "nilでないNodeをかえすこと")
-	assert.EqualValues(id, got.ID, "Idが付与されていること")
-	assert.EqualValues(name, got.Name, "Nameが付与されていること")
+	assert.NoError(gotErr)
+	assert.NotNil(got)
+	assert.EqualValues(id, got.ID)
+	assert.EqualValues(name, got.Name)
 }
 
 func TestUserRepository_GetByID(t *testing.T) {
+	// FIXME
 }

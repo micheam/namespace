@@ -85,10 +85,8 @@ func TestCreateNewNode_Exec(t *testing.T) {
 		assert := assert.New(t)
 
 		presenter := func(ctx context.Context, resp *NodeCreationResponse) error {
-			if assert.NotNil(resp,
-				"presenter must be executed with non nil data") {
-				assert.NotEmpty(resp, "resp must not be empty")
-			}
+			assert.NotNil(resp)
+			assert.NotEmpty(resp, "resp must not be empty")
 			return nil
 		}
 

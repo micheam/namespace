@@ -26,14 +26,14 @@ func TestRowNode_AsNode_returns_a_node(t *testing.T) {
 	// exercise
 	got, gotErr := sut.AsEntity()
 	// verification
-	assert.NoError(gotErr, "エラーとならないこと")
-	assert.NotNil(got, "nilでないNodeをかえすこと")
-	assert.EqualValues(id.String(), got.ID, "Idが付与されていること")
-	if assert.True(got.Name.Valid()) {
-		assert.EqualValues(name, got.Name.String(), "Nameが付与されていること")
+	assert.NoError(gotErr)
+	assert.NotNil(got)
+	assert.EqualValues(id.String(), got.ID)
+	if assert.NotEmpty(got.Name) {
+		assert.EqualValues(name, got.Name.String())
 	}
-	assert.NotNil(got.Description, "DescriptionがNilでないこと")
-	assert.EqualValues(desc, *got.Description, "Descriptionがふよされていること")
+	assert.NotNil(got.Description)
+	assert.EqualValues(desc, *got.Description)
 }
 
 func TestPostgresNodeReader_GetByID(t *testing.T) {
@@ -52,7 +52,7 @@ func TestPostgresNodeReader_GetByID(t *testing.T) {
 	got, gotErr := sut.GetByID(owner, ns.NodeID(id))
 	assert.NoError(gotErr)
 	assert.NotNil(got)
-	assert.EqualValues(got.ID, id, "指定されたIDのNODEが抽出される")
+	assert.EqualValues(got.ID, id)
 }
 
 func TestPostgresNodeReader_GetByID_NoExist(t *testing.T) {
@@ -64,12 +64,10 @@ func TestPostgresNodeReader_GetByID_NoExist(t *testing.T) {
 	t.Cleanup(func() { CleanupAll(db) })
 	sut := NewNodeRepository(db)
 	// Exercise
-	_, gotErr := sut.GetByID(owner, ns.NodeID(id))
+	_, err := sut.GetByID(owner, ns.NodeID(id))
 	// Verification
-	t.Logf("%T", gotErr)
-	if assert.Error(gotErr) {
-		assert.True(errors.Is(gotErr, ns.ErrNotFound),
-			"got error must be ns.ErrNotFound")
+	if assert.Error(err) {
+		assert.True(errors.Is(err, ns.ErrNotFound))
 	}
 }
 
@@ -87,13 +85,13 @@ func TestNodeRepository_Save(t *testing.T) {
 	gotErr := sut.Save(owner, node)
 	// Verify
 	if assert.NoError(gotErr) {
-		assert.False(node.CreatedAt.IsZero(), "CreatedAt が登録時にセットされるべき")
-		assert.False(node.UpdatedAt.IsZero(), "UpdatedAt が登録時にセットされるべき")
-		assert.EqualValues(node.CreatedAt, node.UpdatedAt, "初期登録時は、CreatedAt と UpdatedAt が一致する")
+		assert.NotEmpty(node.CreatedAt)
+		assert.NotEmpty(node.UpdatedAt)
+		assert.EqualValues(node.CreatedAt, node.UpdatedAt)
 
-		got, gotErr := sut.GetByID(owner, node.ID)
-		assert.NoError(gotErr, "登録に")
-		assert.EqualValues(node.ID, got.ID, "エンティティに指定された ID で登録されるべき")
+		foundNode, err := sut.GetByID(owner, node.ID)
+		assert.NoError(err)
+		assert.EqualValues(node.ID, foundNode.ID)
 	}
 }
 
@@ -112,8 +110,7 @@ func TestNodeRepository_Save_Duplicated(t *testing.T) {
 	gotErr := sut.Save(owner, node)
 	// Verify
 	if assert.Error(gotErr) {
-		assert.True(errors.Is(gotErr, ns.ErrDuplicatedEntity),
-			"ns.ErrDuplicatedEntity が返却される")
+		assert.True(errors.Is(gotErr, ns.ErrDuplicatedEntity))
 	}
 }
 
