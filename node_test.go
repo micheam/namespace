@@ -115,12 +115,12 @@ func TestCreateNewNode_Exec(t *testing.T) {
 		t.Run("node name with slash", func(t *testing.T) {
 			got := sut.Exec(ctx, NodeCreationRequest{Name: "name/with/slash"})
 			assert.Error(t, got)
-			assert.True(t, errors.Is(got, ErrIllegalArgument))
+			assert.ErrorIs(t, got, ErrIllegalArgument)
 		})
 		t.Run("empty node name", func(t *testing.T) {
 			got := sut.Exec(ctx, NodeCreationRequest{Name: ""})
 			assert.Error(t, got)
-			assert.True(t, errors.Is(got, ErrIllegalArgument))
+			assert.ErrorIs(t, got, ErrIllegalArgument)
 		})
 	})
 
@@ -142,7 +142,7 @@ func TestCreateNewNode_Exec(t *testing.T) {
 
 		if assert.Error(got) {
 			assert.True(nodeWriter.AssertNumberOfCalls(t, "Save", 1))
-			assert.True(errors.Is(got, orgError))
+			assert.ErrorIs(got, orgError)
 		}
 	})
 }

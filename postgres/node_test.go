@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"database/sql"
-	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -67,7 +66,7 @@ func TestPostgresNodeReader_GetByID_NoExist(t *testing.T) {
 	_, err := sut.GetByID(owner, ns.NodeID(id))
 	// Verification
 	if assert.Error(err) {
-		assert.True(errors.Is(err, ns.ErrNotFound))
+		assert.ErrorIs(err, ns.ErrNotFound)
 	}
 }
 
@@ -110,7 +109,7 @@ func TestNodeRepository_Save_Duplicated(t *testing.T) {
 	gotErr := sut.Save(owner, node)
 	// Verify
 	if assert.Error(gotErr) {
-		assert.True(errors.Is(gotErr, ns.ErrDuplicatedEntity))
+		assert.ErrorIs(gotErr, ns.ErrDuplicatedEntity)
 	}
 }
 
