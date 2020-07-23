@@ -1,9 +1,8 @@
-package postgres
+package ns
 
 import (
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"micheam.com/ns"
 )
 
 func MustGetConn() *sqlx.DB {
@@ -16,25 +15,25 @@ func MustGetConn() *sqlx.DB {
 	return db
 }
 
-func PrepareTestUser(db *sqlx.DB) *ns.User {
+func PrepareTestUser(db *sqlx.DB) *User {
 	// TODO: Add ns.NewUser then use it
 	// TODO: Add NewUserRow then use it
-	user := new(RowUser)
+	user := new(psqlUserRow)
 	user.ID = uuid.New().String()
 	user.Name = "test user"
 	MustInsertUser(db, user)
-	e, _ := user.AsEntity()
+	e, _ := user.toEntity()
 	return e
 }
 
-func MustInsertUser(db *sqlx.DB, n *RowUser) {
+func MustInsertUser(db *sqlx.DB, n *psqlUserRow) {
 	_, err := db.NamedExec("INSERT INTO users (id, name) VALUES (:id, :name)", n)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func MustInsertNode(db *sqlx.DB, n *RowNode) {
+func MustInsertNode(db *sqlx.DB, n *psqlNodeRow) {
 	_, err := db.NamedExec("INSERT INTO node (id, name, user_id) VALUES (:id, :name, :user_id)", n)
 	if err != nil {
 		panic(err)

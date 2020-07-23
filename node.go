@@ -96,8 +96,6 @@ func (n *Node) WithDesc(d string) *Node {
 	return n
 }
 
-// UseCases ------------------------------------------------
-
 // NodeReader ...
 type NodeReader interface {
 	GetByID(owner *User, id NodeID) (*Node, error)
@@ -108,7 +106,11 @@ type NodeWriter interface {
 	Save(owner *User, node *Node) error
 }
 
-// UseCases ------------------------------------------------
+// NodeReadWriter ...
+type NodeReadWriter interface {
+	NodeReader
+	NodeWriter
+}
 
 // NodeCreation is a UseCase.
 type NodeCreation struct {
