@@ -34,7 +34,7 @@ func MustInsertUser(db *sqlx.DB, n *psqlUserRow) {
 }
 
 func MustInsertNode(db *sqlx.DB, n *psqlNodeRow) {
-	_, err := db.NamedExec("INSERT INTO node (id, name, user_id) VALUES (:id, :name, :user_id)", n)
+	_, err := db.NamedExec("INSERT INTO nodes (id, name, user_id) VALUES (:id, :name, :user_id)", n)
 	if err != nil {
 		panic(err)
 	}
@@ -42,5 +42,5 @@ func MustInsertNode(db *sqlx.DB, n *psqlNodeRow) {
 
 func CleanupAll(db *sqlx.DB) {
 	db.MustExec("TRUNCATE TABLE users CASCADE;")
-	db.MustExec("TRUNCATE TABLE node;")
+	db.MustExec("TRUNCATE TABLE nodes;")
 }

@@ -63,7 +63,7 @@ func NewPSQLNodes(db *sqlx.DB) NodeReadWriter {
 func (n *PSQLNodes) GetByID(owner *User, id NodeID) (*Node, error) {
 	var (
 		row = new(psqlNodeRow)
-		err = n.db.Get(row, "SELECT * FROM node WHERE id = $1", id)
+		err = n.db.Get(row, "SELECT * FROM nodes WHERE id = $1", id)
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -96,7 +96,7 @@ func (n *PSQLNodes) Save(owner *User, node *Node) error {
 		UpdatedAt:   sql.NullTime{Valid: true, Time: now},
 	}
 	if _, err := n.db.NamedExec(
-		`INSERT INTO node 
+		`INSERT INTO nodes
          (id, name, description, user_id) 
          VALUES (:id, :name, :description, :user_id)`, row); err != nil {
 
