@@ -115,26 +115,31 @@ type NodeReadWriter interface {
 // NodeCreation is a UseCase.
 type NodeCreation struct {
 	nodeWriter NodeWriter
+	userReader UserReader
 	presenter  NodeCreationResponseOutput
 }
 
 // NewNodeCreation return NodeCreation interactor.
-func NewNodeCreation(w NodeWriter, p NodeCreationResponseOutput) *NodeCreation {
+func NewNodeCreation(
+	w NodeWriter, u UserReader, p NodeCreationResponseOutput) *NodeCreation {
 	return &NodeCreation{
 		nodeWriter: w,
+		userReader: u,
 		presenter:  p,
 	}
 }
 
-// NodeCreationRequest is a request data of new node creation.
-type NodeCreationRequest struct {
-	Name string
-}
-
-// NodeCreationResponse is a response data of new node creation.
-type NodeCreationResponse struct {
-	Created *Node
-}
+type (
+	// NodeCreationRequest is a request data of new node creation.
+	NodeCreationRequest struct {
+		Name string
+		UID  string
+	}
+	// NodeCreationResponse is a response data of new node creation.
+	NodeCreationResponse struct {
+		Created *Node
+	}
+)
 
 // NodeCreationResponseOutput defines how to output the result on new node creation.
 type NodeCreationResponseOutput func(ctx context.Context, resp *NodeCreationResponse) error
@@ -142,13 +147,19 @@ type NodeCreationResponseOutput func(ctx context.Context, resp *NodeCreationResp
 // Exec executes the process of creating a new node.
 func (c *NodeCreation) Exec(ctx context.Context, request NodeCreationRequest) error {
 
+	var err error
+	var user *User
+	if user, err = c.userReader.GetByID(UserID(request.UID)); err != nil {
+		return fmt.Errorf("user %s: %w", request.UID, err)
+	}
+
 	nodeName := NewNodeName(request.Name)
 	if !nodeName.Valid() {
 		return fmt.Errorf("node name: %w", ErrIllegalArgument)
 	}
 
 	node := NewNode(*nodeName)
-	if err := c.nodeWriter.Save(nil, node); err != nil {
+	if err := c.nodeWriter.Save(user, node); err != nil {
 		return fmt.Errorf("failed to save new node: %w", err)
 	}
 

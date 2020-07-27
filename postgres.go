@@ -79,6 +79,10 @@ func (n *PSQLNodes) GetByID(owner *User, id NodeID) (*Node, error) {
 // すでに登録されている（一制約違反する）場合は、 ErrDuplicatedEntity を返却する。
 func (n *PSQLNodes) Save(owner *User, node *Node) error {
 
+	if owner == nil {
+		return fmt.Errorf("owner: %w", ErrIllegalArgument)
+	}
+
 	var desc sql.NullString
 	if node.Description != nil {
 		desc = sql.NullString{

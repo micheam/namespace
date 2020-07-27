@@ -3,9 +3,11 @@ package ns
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -79,70 +81,126 @@ func (m *MockNodeWriter) Save(owner *User, node *Node) error {
 	return args.Error(0)
 }
 
-func TestCreateNewNode_Exec(t *testing.T) {
+type MockUserReader struct {
+	mock.Mock
+}
 
-	t.Run("ordinal", func(t *testing.T) {
-		assert := assert.New(t)
+func (m *MockUserReader) GetByID(id UserID) (*User, error) {
+	args := m.Called(id)
+	if args.Error(1) != nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*User), nil
+}
 
-		presenter := func(ctx context.Context, resp *NodeCreationResponse) error {
-			assert.NotNil(resp)
-			assert.NotEmpty(resp, "resp must not be empty")
-			return nil
-		}
+func TestNodeCreation_Exec_Ordinal(t *testing.T) {
+	assert := assert.New(t)
+	request := NodeCreationRequest{
+		Name: "my namespace",
+		UID:  uuid.New().String(),
+	}
 
-		nodeWriter := new(MockNodeWriter)
-		nodeWriter.On("Save", mock.Anything, mock.Anything).Return(nil)
+	presenter := func(ctx context.Context, resp *NodeCreationResponse) error {
+		assert.NotNil(resp)
+		assert.NotEmpty(resp, "resp must not be empty")
+		return nil
+	}
 
-		sut := NewNodeCreation(nodeWriter, presenter)
-		got := sut.Exec(context.TODO(), NodeCreationRequest{
-			Name: "my namespace",
-		})
-		if assert.NoError(got) {
-			nodeWriter.AssertNumberOfCalls(t, "Save", 1)
-		}
+	nodeWriter := new(MockNodeWriter)
+	nodeWriter.On("Save", mock.Anything, mock.Anything).Return(nil)
+
+	userReader := new(MockUserReader)
+	aUser := &User{ID: UserID(request.UID)}
+	userReader.On("GetByID", mock.Anything).Return(aUser, nil)
+
+	sut := NewNodeCreation(nodeWriter, userReader, presenter)
+	got := sut.Exec(context.TODO(), request)
+	if assert.NoError(got) {
+		nodeWriter.AssertNumberOfCalls(t, "Save", 1)
+	}
+}
+
+func TestNodeCreation_Exec_NoUserFound(t *testing.T) {
+	assert := assert.New(t)
+	request := NodeCreationRequest{
+		Name: "my namespace",
+		UID:  uuid.New().String(),
+	}
+
+	presenter := func(ctx context.Context, resp *NodeCreationResponse) error {
+		assert.NotNil(resp)
+		assert.NotEmpty(resp, "resp must not be empty")
+		return nil
+	}
+
+	nodeWriter := new(MockNodeWriter)
+	userReader := new(MockUserReader)
+
+	notFoundErr := fmt.Errorf("foo: %w", ErrNotFound)
+	userReader.On("GetByID", mock.Anything).Return(nil, notFoundErr)
+
+	sut := NewNodeCreation(nodeWriter, userReader, presenter)
+	got := sut.Exec(context.TODO(), request)
+	if assert.Error(got) {
+		assert.ErrorIs(got, ErrNotFound)
+	}
+}
+
+func TestNodeCreation_Exec_ValidationArg(t *testing.T) {
+	request := NodeCreationRequest{
+		Name: "my namespace",
+		UID:  uuid.New().String(),
+	}
+	presenter := func(ctx context.Context, resp *NodeCreationResponse) error {
+		t.Error("expected to not be called, but was")
+		return nil
+	}
+
+	aUser := &User{ID: UserID(request.UID)}
+	nodeWriter := new(MockNodeWriter)
+	userReader := new(MockUserReader)
+
+	nodeWriter.On("Save", aUser, mock.Anything).Return(nil)
+	userReader.On("GetByID", mock.Anything).Return(aUser, nil)
+	sut := NewNodeCreation(nodeWriter, userReader, presenter)
+
+	ctx := context.TODO()
+	t.Run("node name with slash", func(t *testing.T) {
+		got := sut.Exec(ctx, NodeCreationRequest{Name: "name/with/slash"})
+		assert.Error(t, got)
+		assert.ErrorIs(t, got, ErrIllegalArgument)
 	})
-
-	t.Run("validate request data", func(t *testing.T) {
-		presenter := func(ctx context.Context, resp *NodeCreationResponse) error {
-			t.Error("expected to not be called, but was")
-			return nil
-		}
-		nodeWriter := new(MockNodeWriter)
-		nodeWriter.On("Save", mock.Anything, mock.Anything).Return(nil)
-		sut := NewNodeCreation(nodeWriter, presenter)
-
-		ctx := context.TODO()
-		t.Run("node name with slash", func(t *testing.T) {
-			got := sut.Exec(ctx, NodeCreationRequest{Name: "name/with/slash"})
-			assert.Error(t, got)
-			assert.ErrorIs(t, got, ErrIllegalArgument)
-		})
-		t.Run("empty node name", func(t *testing.T) {
-			got := sut.Exec(ctx, NodeCreationRequest{Name: ""})
-			assert.Error(t, got)
-			assert.ErrorIs(t, got, ErrIllegalArgument)
-		})
+	t.Run("empty node name", func(t *testing.T) {
+		got := sut.Exec(ctx, NodeCreationRequest{Name: ""})
+		assert.Error(t, got)
+		assert.ErrorIs(t, got, ErrIllegalArgument)
 	})
+}
 
-	t.Run("faile to save", func(t *testing.T) {
-		assert := assert.New(t)
-		presenter := func(ctx context.Context, resp *NodeCreationResponse) error {
-			t.Error("expected to not be called, but was")
-			return nil
-		}
+func TestNodeCreation_Exec_FaileToSave(t *testing.T) {
+	assert := assert.New(t)
+	request := NodeCreationRequest{
+		Name: "my namespace",
+		UID:  uuid.New().String(),
+	}
+	presenter := func(ctx context.Context, resp *NodeCreationResponse) error {
+		t.Error("expected to not be called, but was")
+		return nil
+	}
 
-		orgError := errors.New("this is a original error")
-		nodeWriter := new(MockNodeWriter)
-		nodeWriter.On("Save", mock.Anything, mock.Anything).Return(orgError)
+	aUser := &User{ID: UserID(request.UID)}
 
-		sut := NewNodeCreation(nodeWriter, presenter)
-		got := sut.Exec(
-			context.TODO(),
-			NodeCreationRequest{Name: "test"})
+	orgError := errors.New("this is a original error")
+	nodeWriter := new(MockNodeWriter)
+	nodeWriter.On("Save", aUser, mock.Anything).Return(orgError)
 
-		if assert.Error(got) {
-			assert.True(nodeWriter.AssertNumberOfCalls(t, "Save", 1))
-			assert.ErrorIs(got, orgError)
-		}
-	})
+	userReader := new(MockUserReader)
+	userReader.On("GetByID", mock.Anything).Return(aUser, nil)
+	sut := NewNodeCreation(nodeWriter, userReader, presenter)
+	got := sut.Exec(context.TODO(), request)
+
+	if assert.Error(got) {
+		assert.True(nodeWriter.AssertNumberOfCalls(t, "Save", 1))
+		assert.ErrorIs(got, orgError)
+	}
 }

@@ -122,6 +122,18 @@ func TestPSQLNodes_Save_IllegalNode(t *testing.T) {
 	assert.Error(gotErr)
 }
 
+func TestPSQLNodes_Save_NilOwner(t *testing.T) {
+	assert := assert.New(t)
+	db := MustGetConn()
+	sut := &PSQLNodes{db: db}
+	owner := (*User)(nil)
+	node := &Node{ /* ID の指定なし */ Name: *NewNodeName("aaa")}
+	gotErr := sut.Save(owner, node)
+	if assert.Error(gotErr) {
+		assert.ErrorIs(gotErr, ErrIllegalArgument)
+	}
+}
+
 func TestRowUser_AsNode(t *testing.T) {
 	assert := assert.New(t)
 	// setup
