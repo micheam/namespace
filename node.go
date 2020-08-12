@@ -116,16 +116,16 @@ type NodeReadWriter interface {
 type NodeCreation struct {
 	nodeWriter NodeWriter
 	userReader UserReader
-	presenter  NodeCreationResponseOutput
+	handleRes  NodeCreationResponseHandler
 }
 
 // NewNodeCreation return NodeCreation interactor.
 func NewNodeCreation(
-	w NodeWriter, u UserReader, p NodeCreationResponseOutput) *NodeCreation {
+	w NodeWriter, u UserReader, p NodeCreationResponseHandler) *NodeCreation {
 	return &NodeCreation{
 		nodeWriter: w,
 		userReader: u,
-		presenter:  p,
+		handleRes:  p,
 	}
 }
 
@@ -141,8 +141,8 @@ type (
 	}
 )
 
-// NodeCreationResponseOutput defines how to output the result on new node creation.
-type NodeCreationResponseOutput func(ctx context.Context, resp *NodeCreationResponse) error
+// NodeCreationResponseHandler defines how to output the result on new node creation.
+type NodeCreationResponseHandler func(ctx context.Context, resp *NodeCreationResponse) error
 
 // Exec executes the process of creating a new node.
 func (c *NodeCreation) Exec(ctx context.Context, request NodeCreationRequest) error {
@@ -166,5 +166,5 @@ func (c *NodeCreation) Exec(ctx context.Context, request NodeCreationRequest) er
 	response := new(NodeCreationResponse)
 	response.Created = node
 
-	return c.presenter(ctx, response)
+	return c.handleRes(ctx, response)
 }
